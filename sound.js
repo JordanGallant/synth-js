@@ -9,7 +9,7 @@ let sequencerHeight = height * 0.7; // 70% of screen
 const synth = new Tone.Synth({
     envelope: {
         attack: 0.01,
-        decay: 0.1,
+        decay: 1.1,
         sustain: 1,     // full sustain
         release: 1.5    // slow release
     }
@@ -120,6 +120,17 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+document.addEventListener('keyup', (e) => {
+    const key = e.key.toLowerCase();
+    if (keyMap[key]) {
+        const { row, column } = keyMap[key];
+        // Release the note
+        synth.triggerRelease();
+        // Remove the highlight from the cell
+        sequencer.matrix.set.cell(column, row, 0);
+    }
+});
+
 // Function to toggle a sequencer cell and play the corresponding note
 function toggleSequencerCell(row, column) {
     if (row >= 0 && row < sequencer.rows && column >= 0 && column < sequencer.columns) {
@@ -137,7 +148,7 @@ function toggleSequencerCell(row, column) {
 // Function to play a note
 function playNote(note) {
     Tone.start().then(() => {
-        synth.triggerAttackRelease(note, "8n");
+        synth.triggerAttackRelease(note, "1n");
     });
 }
 
