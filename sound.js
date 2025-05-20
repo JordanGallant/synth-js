@@ -15,14 +15,6 @@ const synth = new Tone.Synth({
     }
 }).toDestination();
 
-
-
-
-function stopNote() {
-    synth.triggerRelease();
-}
-
-
 const envelope = new Nexus.Envelope('#envelope', {
     size: [width, envelopeHeight],
 });
@@ -33,8 +25,18 @@ const sequencer = new Nexus.Sequencer('#keys', {
     size: [width - 200, sequencerHeight],
     mode: 'impulse',
     rows: 4,
-    columns: 10,
+    columns: 12, // Changed to 12 for full chromatic scale (one octave)
 });
+
+// Define the chromatic scales for each row
+// Each row will have a complete chromatic scale starting from a different base note
+const scales = {
+    0: ["C3", "C#3", "D3", "D#3", "E3", "F3", "F#3", "G3", "G#3", "A3", "A#3", "B3"],  // Row 1: C3 chromatic scale
+    1: ["C4", "C#4", "D4", "D#4", "E4", "F4", "F#4", "G4", "G#4", "A4", "A#4", "B4"],  // Row 2: C4 chromatic scale
+    2: ["C5", "C#5", "D5", "D#5", "E5", "F5", "F#5", "G5", "G#5", "A5", "A#5", "B5"],  // Row 3: C5 chromatic scale
+    3: ["C6", "C#6", "D6", "D#6", "E6", "F6", "F#6", "G6", "G#6", "A6", "A#6", "B6"]   // Row 4: C6 chromatic scale
+};
+
 //dynamic 
 window.addEventListener('resize', () => {
     width = window.innerWidth;
@@ -50,7 +52,9 @@ window.addEventListener('resize', () => {
 sequencer.colorize("fill", "#333");
 sequencer.colorize("accent", "#ff0");
 
+// Create a keyboard mapping for a 12-column grid
 const keyMap = {
+    // Row 0: Top row numbers
     '1': { column: 0, row: 0 },
     '2': { column: 1, row: 0 },
     '3': { column: 2, row: 0 },
@@ -61,8 +65,10 @@ const keyMap = {
     '8': { column: 7, row: 0 },
     '9': { column: 8, row: 0 },
     '0': { column: 9, row: 0 },
+    '-': { column: 10, row: 0 },
+    '=': { column: 11, row: 0 },
 
-    // Row 1: QWERTYUIOP
+    // Row 1: QWERTYUIOP[]
     'q': { row: 1, column: 0 },
     'w': { row: 1, column: 1 },
     'e': { row: 1, column: 2 },
@@ -73,8 +79,10 @@ const keyMap = {
     'i': { row: 1, column: 7 },
     'o': { row: 1, column: 8 },
     'p': { row: 1, column: 9 },
+    '[': { row: 1, column: 10 },
+    ']': { row: 1, column: 11 },
 
-    // Row 2: ASDFGHJKL;
+    // Row 2: ASDFGHJKL;'
     'a': { row: 2, column: 0 },
     's': { row: 2, column: 1 },
     'd': { row: 2, column: 2 },
@@ -85,6 +93,8 @@ const keyMap = {
     'k': { row: 2, column: 7 },
     'l': { row: 2, column: 8 },
     ';': { row: 2, column: 9 },
+    "'": { row: 2, column: 10 },
+    '\\': { row: 2, column: 11 },
 
     // Row 3: ZXCVBNM,./
     'z': { row: 3, column: 0 },
@@ -96,13 +106,10 @@ const keyMap = {
     'm': { row: 3, column: 6 },
     ',': { row: 3, column: 7 },
     '.': { row: 3, column: 8 },
-    '/': { row: 3, column: 9 }
+    '/': { row: 3, column: 9 },
+    '`': { row: 3, column: 10 },
+    ' ': { row: 3, column: 11 }
 };
-
-// Get the cell index from row and column
-function getCellIndex(row, column) {
-    return row * sequencer.columns + column;
-}
 
 // Listen for key presses
 document.addEventListener('keydown', (e) => {
@@ -112,6 +119,68 @@ document.addEventListener('keydown', (e) => {
         toggleSequencerCell(row, column);
     }
 });
+
+// Function to toggle a sequencer cell and play the corresponding note
+function toggleSequencerCell(row, column) {
+    if (row >= 0 && row < sequencer.rows && column >= 0 && column < sequencer.columns) {
+        const current = sequencer.matrix.pattern[row][column];
+        sequencer.matrix.set.cell(column, row, current ? 0 : 1);
+
+        // Play sound when cell is turned on - using the correct note from our scale
+        if (!current) {
+            const note = scales[row][column];
+            playNote(note);
+        }
+    }
+}
+
+// Function to play a note
+function playNote(note) {
+    Tone.start().then(() => {
+        synth.triggerAttackRelease(note, "8n");
+    });
+}
+
+// When sequencer is clicked, play the appropriate note
+sequencer.on('change', function(data) {
+    if (data.state) {
+        const note = scales[data.row][data.column];
+        playNote(note);
+    }
+});
+
+// Display note labels (optional - adds text labels to show which note is which)
+function createNoteLabels() {
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.top = '0';
+    container.style.left = '0';
+    container.style.width = '100%';
+    container.style.pointerEvents = 'none'; // Don't interfere with clicks
+    
+    for (let row = 0; row < sequencer.rows; row++) {
+        for (let col = 0; col < sequencer.columns; col++) {
+            const label = document.createElement('div');
+            label.textContent = scales[row][col];
+            label.style.position = 'absolute';
+            label.style.color = '#fff';
+            label.style.fontSize = '10px';
+            label.style.textAlign = 'center';
+            
+            // Position calculations would depend on your actual sequencer layout
+            // This is a simplified example
+            const cellWidth = (width - 200) / sequencer.columns;
+            const cellHeight = sequencerHeight / sequencer.rows;
+            
+            label.style.left = `${col * cellWidth + 5}px`;
+            label.style.top = `${row * cellHeight + 5}px`;
+            
+            container.appendChild(label);
+        }
+    }
+    
+    document.body.appendChild(container);
+}
 
 // Initialize MIDI access after user interaction
 window.initMIDI = function () {
@@ -130,25 +199,9 @@ function onMIDIFailure() {
     console.warn("Failed to get MIDI access.");
 }
 
-
-
-function toggleSequencerCell(row, column) {
-    if (row >= 0 && row < sequencer.rows && column >= 0 && column < sequencer.columns) {
-        const current = sequencer.matrix.pattern[row][column];
-        sequencer.matrix.set.cell(column, row, current ? 0 : 1);
-
-        // 🔊 Play sound when cell is turned on
-        if (!current) {
-            synth.triggerAttackRelease("C4", "8n");
-        }
-    }
-}
-document.querySelectorAll('rect').forEach(rect => {
-    rect.addEventListener('click', async () => {
-        await Tone.start(); // Resume audio context
-        synth.triggerAttackRelease("C4", "8n");
-    });
+// Add event listener to handle a click anywhere
+document.addEventListener('click', async () => {
+    await Tone.start(); // Resume audio context
+    // Play a silent note to initialize audio
+    synth.triggerAttackRelease("C4", "32n", undefined, 0);
 });
-
-
-
