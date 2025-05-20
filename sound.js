@@ -6,15 +6,14 @@ let envelopeHeight = height * 0.2; // 20% of screen
 let sequencerHeight = height * 0.7; // 70% of screen
 
 //Tone
-const synth = new Tone.Synth({
+const synth = new Tone.PolySynth(Tone.Synth, {
     envelope: {
         attack: 0.01,
         decay: 1.1,
-        sustain: 1,     // full sustain
-        release: 1.5    // slow release
+        sustain: 1,
+        release: 1.5
     }
 }).toDestination();
-
 const envelope = new Nexus.Envelope('#envelope', {
     size: [width, envelopeHeight],
 });
@@ -29,14 +28,12 @@ const sequencer = new Nexus.Sequencer('#keys', {
 });
 
 // Define the chromatic scales for each row
-// Each row will have a complete chromatic scale starting from a different base note
 const scales = {
-    0: ["C3", "C#3", "D3", "D#3", "E3", "F3", "F#3", "G3", "G#3", "A3", "A#3", "B3"],  // Row 1: C3 chromatic scale
-    1: ["C4", "C#4", "D4", "D#4", "E4", "F4", "F#4", "G4", "G#4", "A4", "A#4", "B4"],  // Row 2: C4 chromatic scale
-    2: ["C5", "C#5", "D5", "D#5", "E5", "F5", "F#5", "G5", "G#5", "A5", "A#5", "B5"],  // Row 3: C5 chromatic scale
-    3: ["C6", "C#6", "D6", "D#6", "E6", "F6", "F#6", "G6", "G#6", "A6", "A#6", "B6"]   // Row 4: C6 chromatic scale
+    0: ["C6", "C#6", "D6", "D#6", "E6", "F6", "F#6", "G6", "G#6", "A6", "A#6", "B6"],   // Bottom row: C6 (HIGHEST notes)
+    1: ["C5", "C#5", "D5", "D#5", "E5", "F5", "F#5", "G5", "G#5", "A5", "A#5", "B5"],   // Row 3: C5 chromatic scale
+    2: ["C4", "C#4", "D4", "D#4", "E4", "F4", "F#4", "G4", "G#4", "A4", "A#4", "B4"],   // Row 2: C4 chromatic scale
+    3: ["C3", "C#3", "D3", "D#3", "E3", "F3", "F#3", "G3", "G#3", "A3", "A#3", "B3"]    // Top row: C3 (LOWEST notes)
 };
-
 //dynamic 
 window.addEventListener('resize', () => {
     width = window.innerWidth;
@@ -124,20 +121,18 @@ document.addEventListener('keyup', (e) => {
     const key = e.key.toLowerCase();
     if (keyMap[key]) {
         const { row, column } = keyMap[key];
-        // Release the note
-        synth.triggerRelease();
-        // Remove the highlight from the cell
+        const note = scales[row][column];
+        synth.triggerRelease(note);
         sequencer.matrix.set.cell(column, row, 0);
     }
 });
 
-// Function to toggle a sequencer cell and play the corresponding note
+
 function toggleSequencerCell(row, column) {
     if (row >= 0 && row < sequencer.rows && column >= 0 && column < sequencer.columns) {
         const current = sequencer.matrix.pattern[row][column];
         sequencer.matrix.set.cell(column, row, current ? 0 : 1);
 
-        // Play sound when cell is turned on - using the correct note from our scale
         if (!current) {
             const note = scales[row][column];
             playNote(note);
@@ -145,14 +140,12 @@ function toggleSequencerCell(row, column) {
     }
 }
 
-// Function to play a note
 function playNote(note) {
     Tone.start().then(() => {
         synth.triggerAttackRelease(note, "1n");
     });
 }
 
-// When sequencer is clicked, play the appropriate note
 sequencer.on('change', function(data) {
     if (data.state) {
         const note = scales[data.row][data.column];
@@ -160,40 +153,74 @@ sequencer.on('change', function(data) {
     }
 });
 
-// Display note labels (optional - adds text labels to show which note is which)
 function createNoteLabels() {
-    const container = document.createElement('div');
-    container.style.position = 'absolute';
-    container.style.top = '0';
-    container.style.left = '0';
-    container.style.width = '100%';
-    container.style.pointerEvents = 'none'; // Don't interfere with clicks
-    
-    for (let row = 0; row < sequencer.rows; row++) {
-        for (let col = 0; col < sequencer.columns; col++) {
-            const label = document.createElement('div');
-            label.textContent = scales[row][col];
-            label.style.position = 'absolute';
-            label.style.color = '#fff';
-            label.style.fontSize = '10px';
-            label.style.textAlign = 'center';
-            
-            // Position calculations would depend on your actual sequencer layout
-            // This is a simplified example
-            const cellWidth = (width - 200) / sequencer.columns;
-            const cellHeight = sequencerHeight / sequencer.rows;
-            
-            label.style.left = `${col * cellWidth + 5}px`;
-            label.style.top = `${row * cellHeight + 5}px`;
-            
-            container.appendChild(label);
+    // Wait a small amount of time for the sequencer to fully render
+    setTimeout(() => {
+        // First, remove any existing labels container
+        const existingContainer = document.getElementById('note-labels-container');
+        if (existingContainer) {
+            existingContainer.remove();
         }
-    }
-    
-    document.body.appendChild(container);
+        
+        // Get the sequencer element and its position
+        const sequencerElement = document.getElementById('keys');
+        if (!sequencerElement) {
+            console.error('Sequencer element not found');
+            return;
+        }
+        
+        const sequencerRect = sequencerElement.getBoundingClientRect();
+        
+        // Create a container for the labels
+        const container = document.createElement('div');
+        container.id = 'note-labels-container';
+        container.style.position = 'absolute';
+        container.style.top = sequencerRect.top + 'px';
+        container.style.left = sequencerRect.left + 'px';
+        container.style.width = sequencerRect.width + 'px';
+        container.style.height = sequencerRect.height + 'px';
+        container.style.pointerEvents = 'none';
+        container.style.zIndex = '1000';
+        document.body.appendChild(container);
+        
+        // Calculate cell dimensions
+        const cellWidth = sequencerRect.width / sequencer.columns;
+        const cellHeight = sequencerRect.height / sequencer.rows;
+        
+        // Create labels based on the sequencer grid
+        for (let row = 0; row < sequencer.rows; row++) {
+            for (let col = 0; col < sequencer.columns; col++) {
+                const note = scales[row][col];
+                
+                const label = document.createElement('div');
+                label.textContent = note;
+                label.style.position = 'absolute';
+                label.style.color = '#fff';
+                label.style.fontSize = '10px';
+                label.style.fontWeight = 'bold';
+                label.style.textAlign = 'center';
+                label.style.display = 'flex';
+                label.style.alignItems = 'center';
+                label.style.justifyContent = 'center';
+                label.style.left = (col * cellWidth) + 'px';
+                label.style.top = (row * cellHeight) + 'px';
+                label.style.width = cellWidth + 'px';
+                label.style.height = cellHeight + 'px';
+                label.style.backgroundColor = 'rgba(0, 0, 0, 0.1)';
+                label.style.textShadow = '1px 1px 1px #000';
+                
+                container.appendChild(label);
+            }
+        }
+    }, 300); // Slightly longer delay to ensure sequencer has rendered
 }
 
-// Initialize MIDI access after user interaction
+// Call this function after window resize too
+window.addEventListener('resize', createNoteLabels);
+
+// Call createNoteLabels after initializing the sequencer
+createNoteLabels();
+
 window.initMIDI = function () {
     if (navigator.requestMIDIAccess) {
         navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
@@ -202,17 +229,37 @@ window.initMIDI = function () {
     }
 };
 
-function onMIDISuccess() {
+function onMIDISuccess(midiAccess) {
     console.log("MIDI connected.");
+    
+    // Set up MIDI input handling
+    const inputs = midiAccess.inputs.values();
+    for (let input = inputs.next(); input && !input.done; input = inputs.next()) {
+        input.value.onmidimessage = onMIDIMessage;
+    }
+}
+
+function onMIDIMessage(message) {
+    // MIDI message data
+    const command = message.data[0] >> 4;
+    const channel = message.data[0] & 0xf;
+    const noteNumber = message.data[1];
+    const velocity = message.data[2] / 127; // Convert 0-127 to 0-1
+    
+    // Get frequency from MIDI note number
+    const note = Tone.Frequency(noteNumber, "midi").toNote();
+    
+    // Note on (144-159) with velocity > 0
+    if (command === 9 && velocity > 0) {
+        synth.triggerAttack(note, Tone.now(), velocity);
+    }
+    // Note off (128-143) or Note on with velocity = 0
+    else if (command === 8 || (command === 9 && velocity === 0)) {
+        synth.triggerRelease(note);
+    }
 }
 
 function onMIDIFailure() {
     console.warn("Failed to get MIDI access.");
 }
 
-// Add event listener to handle a click anywhere
-document.addEventListener('click', async () => {
-    await Tone.start(); // Resume audio context
-    // Play a silent note to initialize audio
-    synth.triggerAttackRelease("C4", "32n", undefined, 0);
-});
