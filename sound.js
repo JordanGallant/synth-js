@@ -1,14 +1,33 @@
-const dial = new Nexus.Dial('#dial');
-dial.value = 0.5;
-dial.colorize("accent", "#ff0");
-dial.colorize("fill", "#333");
 document.body.style.backgroundColor = "#000";
 
+let width = window.innerWidth;
+let height = window.innerHeight;
+
+let envelopeHeight = height * 0.2; // 20% of screen
+let sequencerHeight = height * 0.7; // 70% of screen
+
+const envelope = new Nexus.Envelope('#envelope', {
+  size: [width, envelopeHeight],
+});
+envelope.colorize("accent", "#ff0");
+envelope.colorize("fill", "#333");
+
 const sequencer = new Nexus.Sequencer('#keys', {
-  size: [1000, 700],
+  size: [width - 20, sequencerHeight],
   mode: 'impulse',
   rows: 4,
   columns: 10,
+});
+//dynamic 
+window.addEventListener('resize', () => {
+  width = window.innerWidth;
+  height = window.innerHeight;
+
+  envelopeHeight = height * 0.2;
+  sequencerHeight = height * 0.7;
+
+  envelope.resize(width, envelopeHeight);
+  sequencer.resize(width - 20, sequencerHeight);
 });
 
 sequencer.colorize("fill", "#333");

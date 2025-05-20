@@ -1,33 +1,43 @@
 <html>
-  <head>
+
+<head>
     <style>
-      #dial {
-        width: 200px;
-        height: 200px;
-        margin: 50px auto;
-      }
-      #startBtn {
-        display: block;
-        margin: 20px auto;
-        padding: 10px 20px;
-        font-size: 18px;
-      }
+        #dial {
+            width: 200px;
+            height: 200px;
+            margin: 50px auto;
+        }
+
+        #startBtn {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 18px;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/nexusui@latest/dist/NexusUI.js"></script>
-  </head>
-  <body>
+</head>
+
+<body>
 
     <button id="startBtn">Start MIDI</button>
-    <div id="dial"></div>
-    <div id="keys"></div>
+<div style="display: flex; align-items: center; justify-content: center; width:100%">
+  <div id="envelope"></div>
+  <div id="dial"></div>
+</div>
+    <div style="width: 100%; display: flex; justify-content: center; align-items: center; height: 100vh;">
+
+        <div id="keys"></div>
+    </div>
 
     <script src="sound.js"></script>
     <script>
-      document.getElementById('startBtn').addEventListener('click', () => {
-        initMIDI();
-        document.getElementById('startBtn').style.display = 'none';
-      });
+        document.getElementById('startBtn').addEventListener('click', () => {
+            initMIDI();
+            document.getElementById('startBtn').style.display = 'none';
+        });
     </script>
 
-  </body>
+</body>
+
 </html>
