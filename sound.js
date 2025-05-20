@@ -16,9 +16,7 @@ const synth = new Tone.Synth({
 }).toDestination();
 
 
-function playNote() {
-    synth.triggerAttack("C4");
-}
+
 
 function stopNote() {
     synth.triggerRelease();
@@ -124,10 +122,7 @@ window.initMIDI = function () {
     }
 };
 
-function onMIDISuccess(midiAccess) {
-    for (let input of midiAccess.inputs.values()) {
-        input.onmidimessage = handleMIDIMessage;
-    }
+function onMIDISuccess() {
     console.log("MIDI connected.");
 }
 
@@ -135,14 +130,7 @@ function onMIDIFailure() {
     console.warn("Failed to get MIDI access.");
 }
 
-function handleMIDIMessage(message) {
-    const [status, note, velocity] = message.data;
 
-    const isNoteOn = status >= 144 && status < 160 && velocity > 0;
-    if (isNoteOn) {
-        synth.triggerAttackRelease("C4", "8n");
-    }
-}
 
 function toggleSequencerCell(row, column) {
     if (row >= 0 && row < sequencer.rows && column >= 0 && column < sequencer.columns) {
@@ -155,23 +143,12 @@ function toggleSequencerCell(row, column) {
         }
     }
 }
-
-document.addEventListener('mousedown', async () => {
-    // Log first before any potential errors
-    console.log("PRESSED");
-    
-    try {
-        // Move Tone.start() after logging to ensure the log happens
-        await Tone.start();
-        playNote();
-    } catch (error) {
-        console.error("Error in mousedown handler:", error);
-    }
+document.querySelectorAll('rect').forEach(rect => {
+    rect.addEventListener('click', async () => {
+        await Tone.start(); // Resume audio context
+        synth.triggerAttackRelease("C4", "8n");
+    });
 });
 
-document.addEventListener('mouseup', () => {
-    console.log("RELEASED");
-    stopNote();
-});
 
 
