@@ -1,11 +1,10 @@
 document.body.style.backgroundColor = "#000";
-//Dynamic variables
+
 let width = window.innerWidth;
 let height = window.innerHeight;
-let envelopeHeight = height * 0.2; // 20% of screen
-let sequencerHeight = height * 0.7; // 70% of screen
+let envelopeHeight = height * 0.2;
+let sequencerHeight = height * 0.7;
 
-//Tone
 const synth = new Tone.PolySynth(Tone.Synth, {
     envelope: {
         attack: 0.01,
@@ -14,6 +13,7 @@ const synth = new Tone.PolySynth(Tone.Synth, {
         release: 1.5
     }
 }).toDestination();
+
 const envelope = new Nexus.Envelope('#envelope', {
     size: [width, envelopeHeight],
 });
@@ -24,96 +24,55 @@ const sequencer = new Nexus.Sequencer('#keys', {
     size: [width - 200, sequencerHeight],
     mode: 'impulse',
     rows: 4,
-    columns: 12, // Changed to 12 for full chromatic scale (one octave)
+    columns: 12,
 });
 
-// Define the chromatic scales for each row
 const scales = {
-    0: ["C6", "C#6", "D6", "D#6", "E6", "F6", "F#6", "G6", "G#6", "A6", "A#6", "B6"],   // Bottom row: C6 (HIGHEST notes)
-    1: ["C5", "C#5", "D5", "D#5", "E5", "F5", "F#5", "G5", "G#5", "A5", "A#5", "B5"],   // Row 3: C5 chromatic scale
-    2: ["C4", "C#4", "D4", "D#4", "E4", "F4", "F#4", "G4", "G#4", "A4", "A#4", "B4"],   // Row 2: C4 chromatic scale
-    3: ["C3", "C#3", "D3", "D#3", "E3", "F3", "F#3", "G3", "G#3", "A3", "A#3", "B3"]    // Top row: C3 (LOWEST notes)
+    0: ["C6", "C#6", "D6", "D#6", "E6", "F6", "F#6", "G6", "G#6", "A6", "A#6", "B6"],
+    1: ["C5", "C#5", "D5", "D#5", "E5", "F5", "F#5", "G5", "G#5", "A5", "A#5", "B5"],
+    2: ["C4", "C#4", "D4", "D#4", "E4", "F4", "F#4", "G4", "G#4", "A4", "A#4", "B4"],
+    3: ["C3", "C#3", "D3", "D#3", "E3", "F3", "F#3", "G3", "G#3", "A3", "A#3", "B3"]
 };
-//dynamic 
-window.addEventListener('resize', () => {
-    width = window.innerWidth;
-    height = window.innerHeight;
-
-    envelopeHeight = height * 0.2;
-    sequencerHeight = height * 0.7;
-
-    envelope.resize(width, envelopeHeight);
-    sequencer.resize(width - 20, sequencerHeight);
-});
 
 sequencer.colorize("fill", "#333");
 sequencer.colorize("accent", "#ff0");
 
-// Create a keyboard mapping for a 12-column grid
+window.addEventListener('resize', () => {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    envelopeHeight = height * 0.2;
+    sequencerHeight = height * 0.7;
+    envelope.resize(width, envelopeHeight);
+    sequencer.resize(width - 200, sequencerHeight);
+    checkScrollTop();
+});
+
+const activeNotes = {};
+
 const keyMap = {
-    // Row 0: Top row numbers
-    '1': { column: 0, row: 0 },
-    '2': { column: 1, row: 0 },
-    '3': { column: 2, row: 0 },
-    '4': { column: 3, row: 0 },
-    '5': { column: 4, row: 0 },
-    '6': { column: 5, row: 0 },
-    '7': { column: 6, row: 0 },
-    '8': { column: 7, row: 0 },
-    '9': { column: 8, row: 0 },
-    '0': { column: 9, row: 0 },
-    '-': { column: 10, row: 0 },
-    '=': { column: 11, row: 0 },
-
-    // Row 1: QWERTYUIOP[]
-    'q': { row: 1, column: 0 },
-    'w': { row: 1, column: 1 },
-    'e': { row: 1, column: 2 },
-    'r': { row: 1, column: 3 },
-    't': { row: 1, column: 4 },
-    'y': { row: 1, column: 5 },
-    'u': { row: 1, column: 6 },
-    'i': { row: 1, column: 7 },
-    'o': { row: 1, column: 8 },
-    'p': { row: 1, column: 9 },
-    '[': { row: 1, column: 10 },
-    ']': { row: 1, column: 11 },
-
-    // Row 2: ASDFGHJKL;'
-    'a': { row: 2, column: 0 },
-    's': { row: 2, column: 1 },
-    'd': { row: 2, column: 2 },
-    'f': { row: 2, column: 3 },
-    'g': { row: 2, column: 4 },
-    'h': { row: 2, column: 5 },
-    'j': { row: 2, column: 6 },
-    'k': { row: 2, column: 7 },
-    'l': { row: 2, column: 8 },
-    ';': { row: 2, column: 9 },
-    "'": { row: 2, column: 10 },
-    '\\': { row: 2, column: 11 },
-
-    // Row 3: ZXCVBNM,./
-    'z': { row: 3, column: 0 },
-    'x': { row: 3, column: 1 },
-    'c': { row: 3, column: 2 },
-    'v': { row: 3, column: 3 },
-    'b': { row: 3, column: 4 },
-    'n': { row: 3, column: 5 },
-    'm': { row: 3, column: 6 },
-    ',': { row: 3, column: 7 },
-    '.': { row: 3, column: 8 },
-    '/': { row: 3, column: 9 },
-    '`': { row: 3, column: 10 },
-    ' ': { row: 3, column: 11 }
+    '1': { column: 0, row: 0 }, '2': { column: 1, row: 0 }, '3': { column: 2, row: 0 }, '4': { column: 3, row: 0 },
+    '5': { column: 4, row: 0 }, '6': { column: 5, row: 0 }, '7': { column: 6, row: 0 }, '8': { column: 7, row: 0 },
+    '9': { column: 8, row: 0 }, '0': { column: 9, row: 0 }, '-': { column: 10, row: 0 }, '=': { column: 11, row: 0 },
+    'q': { row: 1, column: 0 }, 'w': { row: 1, column: 1 }, 'e': { row: 1, column: 2 }, 'r': { row: 1, column: 3 },
+    't': { row: 1, column: 4 }, 'y': { row: 1, column: 5 }, 'u': { row: 1, column: 6 }, 'i': { row: 1, column: 7 },
+    'o': { row: 1, column: 8 }, 'p': { row: 1, column: 9 }, '[': { row: 1, column: 10 }, ']': { row: 1, column: 11 },
+    'a': { row: 2, column: 0 }, 's': { row: 2, column: 1 }, 'd': { row: 2, column: 2 }, 'f': { row: 2, column: 3 },
+    'g': { row: 2, column: 4 }, 'h': { row: 2, column: 5 }, 'j': { row: 2, column: 6 }, 'k': { row: 2, column: 7 },
+    'l': { row: 2, column: 8 }, ';': { row: 2, column: 9 }, "'": { row: 2, column: 10 }, '\\': { row: 2, column: 11 },
+    '`': { row: 3, column: 0 }, 'z': { row: 3, column: 1 }, 'x': { row: 3, column: 2 }, 'c': { row: 3, column: 3 },
+    'v': { row: 3, column: 4 }, 'b': { row: 3, column: 5 }, 'n': { row: 3, column: 6 }, 'm': { row: 3, column: 7 },
+    ',': { row: 3, column: 8 }, '.': { row: 3, column: 9 }, '/': { row: 3, column: 10 }
 };
 
-// Listen for key presses
 document.addEventListener('keydown', (e) => {
+    if (e.repeat) return;
     const key = e.key.toLowerCase();
     if (keyMap[key]) {
         const { row, column } = keyMap[key];
-        toggleSequencerCell(row, column);
+        const note = scales[row][column];
+        activeNotes[key] = note;
+        sequencer.matrix.set.cell(column, row, 1);
+        Tone.start().then(() => synth.triggerAttack(note));
     }
 });
 
@@ -121,57 +80,124 @@ document.addEventListener('keyup', (e) => {
     const key = e.key.toLowerCase();
     if (keyMap[key]) {
         const { row, column } = keyMap[key];
-        const note = scales[row][column];
-        synth.triggerRelease(note);
+        if (activeNotes[key]) {
+            const note = activeNotes[key];
+            synth.triggerRelease(note);
+            delete activeNotes[key];
+        }
         sequencer.matrix.set.cell(column, row, 0);
     }
 });
 
+// Remove or comment out default play-on-change
+sequencer.on('change', function (data) {
+    // Do nothing for click-based play
+});
 
-function toggleSequencerCell(row, column) {
-    if (row >= 0 && row < sequencer.rows && column >= 0 && column < sequencer.columns) {
-        const current = sequencer.matrix.pattern[row][column];
-        sequencer.matrix.set.cell(column, row, current ? 0 : 1);
+function setupCellPointerEvents() {
+    const sequencerElement = document.getElementById('keys');
 
-        if (!current) {
+    sequencerElement.addEventListener('pointerdown', (e) => {
+        const rect = sequencerElement.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const cellWidth = rect.width / sequencer.columns;
+        const cellHeight = rect.height / sequencer.rows;
+
+        const column = Math.floor(x / cellWidth);
+        const row = Math.floor(y / cellHeight);
+
+        if (row >= 0 && row < sequencer.rows && column >= 0 && column < sequencer.columns) {
             const note = scales[row][column];
-            playNote(note);
+            Tone.start().then(() => synth.triggerAttack(note));
+            activeNotes['pointer'] = note;
+            sequencer.matrix.set.cell(column, row, 1);
         }
-    }
-}
+    });
 
-function playNote(note) {
-    Tone.start().then(() => {
-        synth.triggerAttackRelease(note, "1n");
+    ['pointerup', 'pointerleave'].forEach(evt => {
+        sequencerElement.addEventListener(evt, () => {
+            const note = activeNotes['pointer'];
+            if (note) {
+                synth.triggerRelease(note);
+                delete activeNotes['pointer'];
+            }
+        });
     });
 }
 
-sequencer.on('change', function(data) {
-    if (data.state) {
-        const note = scales[data.row][data.column];
-        playNote(note);
+setupCellPointerEvents();
+
+function stopAllSounds() {
+    synth.releaseAll();
+    for (const key in activeNotes) delete activeNotes[key];
+    for (let row = 0; row < sequencer.rows; row++) {
+        for (let col = 0; col < sequencer.columns; col++) {
+            sequencer.matrix.set.cell(col, row, 0);
+        }
+    }
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') stopAllSounds();
+});
+
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopAllSounds();
+});
+
+document.addEventListener('click', (e) => {
+    if (e.button === 2) {
+        stopAllSounds();
+        e.preventDefault();
     }
 });
 
+window.initMIDI = function () {
+    if (navigator.requestMIDIAccess) {
+        navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
+    } else {
+        console.warn("Web MIDI API not supported.");
+    }
+};
+
+function onMIDISuccess(midiAccess) {
+    console.log("MIDI connected.");
+    const inputs = midiAccess.inputs.values();
+    for (let input = inputs.next(); input && !input.done; input = inputs.next()) {
+        input.value.onmidimessage = onMIDIMessage;
+    }
+}
+
+function onMIDIMessage(message) {
+    const command = message.data[0] >> 4;
+    const noteNumber = message.data[1];
+    const velocity = message.data[2] / 127;
+    const note = Tone.Frequency(noteNumber, "midi").toNote();
+
+    if (command === 9 && velocity > 0) {
+        synth.triggerAttack(note, Tone.now(), velocity);
+    } else if (command === 8 || (command === 9 && velocity === 0)) {
+        synth.triggerRelease(note);
+    }
+}
+
+function onMIDIFailure() {
+    console.warn("Failed to get MIDI access.");
+}
+
 function createNoteLabels() {
-    // Wait a small amount of time for the sequencer to fully render
-    setTimeout(() => {
-        // First, remove any existing labels container
+    const createLabels = () => {
         const existingContainer = document.getElementById('note-labels-container');
-        if (existingContainer) {
-            existingContainer.remove();
-        }
-        
-        // Get the sequencer element and its position
+        if (existingContainer) existingContainer.remove();
+
         const sequencerElement = document.getElementById('keys');
-        if (!sequencerElement) {
-            console.error('Sequencer element not found');
-            return;
-        }
-        
+        if (!sequencerElement) return;
+
+        document.body.offsetHeight;
+
         const sequencerRect = sequencerElement.getBoundingClientRect();
-        
-        // Create a container for the labels
         const container = document.createElement('div');
         container.id = 'note-labels-container';
         container.style.position = 'absolute';
@@ -182,16 +208,13 @@ function createNoteLabels() {
         container.style.pointerEvents = 'none';
         container.style.zIndex = '1000';
         document.body.appendChild(container);
-        
-        // Calculate cell dimensions
+
         const cellWidth = sequencerRect.width / sequencer.columns;
         const cellHeight = sequencerRect.height / sequencer.rows;
-        
-        // Create labels based on the sequencer grid
+
         for (let row = 0; row < sequencer.rows; row++) {
             for (let col = 0; col < sequencer.columns; col++) {
                 const note = scales[row][col];
-                
                 const label = document.createElement('div');
                 label.textContent = note;
                 label.style.position = 'absolute';
@@ -208,58 +231,20 @@ function createNoteLabels() {
                 label.style.height = cellHeight + 'px';
                 label.style.backgroundColor = 'rgba(0, 0, 0, 0.1)';
                 label.style.textShadow = '1px 1px 1px #000';
-                
                 container.appendChild(label);
             }
         }
-    }, 300); // Slightly longer delay to ensure sequencer has rendered
-}
+    };
 
-// Call this function after window resize too
-window.addEventListener('resize', createNoteLabels);
-
-// Call createNoteLabels after initializing the sequencer
-createNoteLabels();
-
-window.initMIDI = function () {
-    if (navigator.requestMIDIAccess) {
-        navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
+    if (document.readyState === 'complete') {
+        setTimeout(createLabels, 300);
     } else {
-        console.warn("Web MIDI API not supported.");
-    }
-};
-
-function onMIDISuccess(midiAccess) {
-    console.log("MIDI connected.");
-    
-    // Set up MIDI input handling
-    const inputs = midiAccess.inputs.values();
-    for (let input = inputs.next(); input && !input.done; input = inputs.next()) {
-        input.value.onmidimessage = onMIDIMessage;
+        window.addEventListener('load', () => setTimeout(createLabels, 300));
     }
 }
 
-function onMIDIMessage(message) {
-    // MIDI message data
-    const command = message.data[0] >> 4;
-    const channel = message.data[0] & 0xf;
-    const noteNumber = message.data[1];
-    const velocity = message.data[2] / 127; // Convert 0-127 to 0-1
-    
-    // Get frequency from MIDI note number
-    const note = Tone.Frequency(noteNumber, "midi").toNote();
-    
-    // Note on (144-159) with velocity > 0
-    if (command === 9 && velocity > 0) {
-        synth.triggerAttack(note, Tone.now(), velocity);
-    }
-    // Note off (128-143) or Note on with velocity = 0
-    else if (command === 8 || (command === 9 && velocity === 0)) {
-        synth.triggerRelease(note);
-    }
+function checkScrollTop() {
+    if (window.scrollY === 0) createNoteLabels();
 }
 
-function onMIDIFailure() {
-    console.warn("Failed to get MIDI access.");
-}
-
+window.addEventListener('scroll', checkScrollTop);
