@@ -5,14 +5,13 @@ let height = window.innerHeight;
 let envelopeHeight = height * 0.2;
 let sequencerHeight = height * 0.7;
 
+//limite combining of amplitudes 
+const limiter = new Tone.Limiter(-6).toDestination();
 const synth = new Tone.PolySynth(Tone.Synth, {
-    envelope: {
-        attack: 0.01,
-        decay: 1.1,
-        sustain: 1,
-        release: 1.5
-    }
-}).toDestination();
+    volume: -6,
+    envelope: { attack: 0.01, decay: 0.5, sustain: 0.4, release: 1.2 }
+}).connect(limiter);
+
 
 const envelope = new Nexus.Envelope('#envelope', {
     size: [width, envelopeHeight],
@@ -248,3 +247,5 @@ function checkScrollTop() {
 }
 
 window.addEventListener('scroll', checkScrollTop);
+
+
